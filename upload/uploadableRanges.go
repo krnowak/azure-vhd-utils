@@ -5,16 +5,18 @@ import (
 	"github.com/Microsoft/azure-vhd-utils/vhdcore/diskstream"
 )
 
-// LocateUploadableRanges detects the uploadable ranges in a VHD stream, size of each range is at most pageSizeInBytes.
+// LocateUploadableRanges detects the uploadable ranges in a VHD stream, size of each range is at most
+// pageSetSizeInBytes and a multiple of pageSizeInBytes (basically each range represents a set of pageSizeInBytes-sized
+// pages that together take at most pageSetSizeInBytes bytes).
 //
 // This method reads the existing ranges A from the disk stream, creates a new set of ranges B from A by removing the
 // ranges identified by the parameter rangesToSkip, returns new set of ranges C (with each range of size at most
-// pageSizeInBytes) by merging adjacent ranges in B or splitting ranges in B.
+// pageSetSizeInBytes) by merging adjacent ranges in B or splitting ranges in B.
 //
 // Note that this method will not check whether ranges of a fixed disk contains zeros, hence inorder to filter out such
 // ranges from the uploadable ranges, caller must use LocateNonEmptyRangeIndices method.
 //
-func LocateUploadableRanges(stream *diskstream.DiskStream, rangesToSkip []*common.IndexRange, pageSizeInBytes int64) ([]*common.IndexRange, error) {
+func LocateUploadableRanges(stream *diskstream.DiskStream, rangesToSkip []*common.IndexRange, pageSizeInBytes, pageSetSizeInBytes int64) ([]*common.IndexRange, error) {
 	var err error
 	var diskRanges = make([]*common.IndexRange, 0)
 	stream.EnumerateExtents(func(ext *diskstream.StreamExtent, extErr error) bool {
@@ -32,6 +34,6 @@ func LocateUploadableRanges(stream *diskstream.DiskStream, rangesToSkip []*commo
 	}
 
 	diskRanges = common.SubtractRanges(diskRanges, rangesToSkip)
-	diskRanges = common.ChunkRangesBySize(diskRanges, pageSizeInBytes)
+	diskRanges = common.ChunkRangesBySizeWithQuant(diskRanges, pageSetSizeInBytes, pageSizeInBytes)
 	return diskRanges, nil
 }

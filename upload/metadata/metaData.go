@@ -2,6 +2,7 @@ package metadata
 
 import (
 	"bytes"
+	"context"
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/json"
@@ -10,9 +11,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/Azure/azure-sdk-for-go/storage"
 	"github.com/Microsoft/azure-vhd-utils/upload/progress"
 	"github.com/Microsoft/azure-vhd-utils/vhdcore/diskstream"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/blob"
 )
 
 // The key of the page blob metadata collection entry holding VHD metadata as json.
@@ -57,6 +59,16 @@ func (m *MetaData) ToMap() (map[string]string, error) {
 	return map[string]string{metaDataKey: v}, nil
 }
 
+// ToMap returns the map representation of the MetaData which can be stored in the page blob metadata colleciton
+func (m *MetaData) ToPtrMap() (map[string]*string, error) {
+	v, err := m.ToJSON()
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]*string{metaDataKey: &v}, nil
+}
+
 // NewMetaDataFromLocalVHD creates a MetaData instance that should be associated with the page blob
 // holding the VHD. The parameter vhdPath is the path to the local VHD.
 //
@@ -91,22 +103,26 @@ func NewMetaDataFromLocalVHD(vhdPath string) (*MetaData, error) {
 // NewMetadataFromBlob returns MetaData instance associated with a Azure page blob, if there is no
 // MetaData associated with the blob it returns nil value for MetaData
 //
-func NewMetadataFromBlob(blobClient storage.BlobStorageClient, containerName, blobName string) (*MetaData, error) {
-	allMetadata, err := blobClient.GetBlobMetadata(containerName, blobName)
+func NewMetadataFromBlob(blobClient *blob.Client) (*MetaData, error) {
+	resp, err := blobClient.GetProperties(context.TODO(), nil)
 	if err != nil {
-		return nil, fmt.Errorf("NewMetadataFromBlob, failed to fetch blob metadata: %v", err)
+		return nil, fmt.Errorf("NewMetadataFromBlob, failed to fetch blob properties: %v", err)
 	}
-	m, ok := allMetadata[metaDataKey]
-	if !ok {
+	return NewMetadataFromBlobProperties(resp)
+}
+
+// NewMetadataFromBlobProperties returns MetaData instance associated with a Azure page blob, if there is no
+// MetaData associated with the blob it returns nil value for MetaData
+func NewMetadataFromBlobProperties(properties blob.GetPropertiesResponse) (*MetaData, error) {
+	m, ok := properties.Metadata[metaDataKey]
+	if !ok || m == nil {
 		return nil, nil
 	}
-
-	b := []byte(m)
-	metadata := MetaData{}
-	if err := json.Unmarshal(b, &metadata); err != nil {
+	metadata := new(MetaData)
+	if err := json.Unmarshal([]byte(*m), metadata); err != nil {
 		return nil, fmt.Errorf("NewMetadataFromBlob, failed to deserialize blob metadata with key %s: %v", metaDataKey, err)
 	}
-	return &metadata, nil
+	return metadata, nil
 }
 
 // CompareMetaData compares the MetaData associated with the remote page blob and local VHD file. If both metadata
