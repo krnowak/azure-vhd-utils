@@ -103,9 +103,32 @@ func ChunkRangesBySize(ranges []*IndexRange, chunkSizeInBytes int64) []*IndexRan
 // multiples. chunkSizeInBytes must be a multiple of quantSizeInBytes.
 func ChunkRangesBySizeWithQuant(ranges []*IndexRange, chunkSizeInBytes, quantSizeInBytes int64) []*IndexRange {
 	roundedRanges := make([]*IndexRange, 0, len(ranges))
+	var prevRange *IndexRange
 
 	for _, r := range ranges {
-		roundedRanges = append(roundedRanges, r.RoundedUp(quantSizeInBytes))
+		rounded := r.RoundedUp(quantSizeInBytes)
+		if prevRange != nil {
+			if prevRange.Includes(rounded) {
+				continue
+			}
+			// The expectation here is "rounded" should be
+			// after "prevRange". So if there is an
+			// overlap between them, then the overlap
+			// covers the end of "prevRange" and a
+			// beginning of "rounded". Thus we shorten the
+			// "rounded" range by moving its start, so it
+			// becomes Adjacent to "prevRange". We know
+			// that moving the Start won't make the
+			// "rounded" range empty, because we already
+			// made sure that "prevRange" does not include
+			// "rounded".
+			overlap := prevRange.Intersection(rounded)
+			if overlap != nil {
+				rounded.Start += overlap.Length()
+			}
+		}
+		roundedRanges = append(roundedRanges, rounded)
+		prevRange = rounded
 	}
 
 	return ChunkRangesBySize(roundedRanges, chunkSizeInBytes)
