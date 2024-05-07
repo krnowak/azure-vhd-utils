@@ -2,7 +2,6 @@ package metadata
 
 import (
 	"bytes"
-	"context"
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/json"
@@ -13,8 +12,6 @@ import (
 
 	"github.com/Microsoft/azure-vhd-utils/upload/progress"
 	"github.com/Microsoft/azure-vhd-utils/vhdcore/diskstream"
-
-	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/blob"
 )
 
 // The key of the page blob metadata collection entry holding VHD metadata as json.
@@ -94,26 +91,16 @@ func NewMetaDataFromLocalVHD(vhdPath string) (*MetaData, error) {
 	}, nil
 }
 
-// NewMetadataFromBlob returns MetaData instance associated with a Azure page blob, if there is no
-// MetaData associated with the blob it returns nil value for MetaData
-func NewMetadataFromBlob(blobClient *blob.Client) (*MetaData, error) {
-	resp, err := blobClient.GetProperties(context.TODO(), nil)
-	if err != nil {
-		return nil, fmt.Errorf("NewMetadataFromBlob, failed to fetch blob properties: %v", err)
-	}
-	return NewMetadataFromBlobProperties(resp)
-}
-
-// NewMetadataFromBlobProperties returns MetaData instance associated with a Azure page blob, if there is no
-// MetaData associated with the blob it returns nil value for MetaData
-func NewMetadataFromBlobProperties(properties blob.GetPropertiesResponse) (*MetaData, error) {
-	m, ok := properties.Metadata[metaDataKey]
+// NewMetadataFromBlobMetadata returns MetaData instance associated with a Azure page blob, if there is no MetaData
+// associated with the blob it returns nil value for MetaData
+func NewMetadataFromBlobMetaData(blobmd map[string]*string) (*MetaData, error) {
+	m, ok := blobmd[metaDataKey]
 	if !ok || m == nil {
 		return nil, nil
 	}
 	metadata := new(MetaData)
 	if err := json.Unmarshal([]byte(*m), metadata); err != nil {
-		return nil, fmt.Errorf("NewMetadataFromBlob, failed to deserialize blob metadata with key %s: %v", metaDataKey, err)
+		return nil, fmt.Errorf("NewMetadataFromBlobMetadata, failed to deserialize blob metadata with key %s: %v", metaDataKey, err)
 	}
 	return metadata, nil
 }
