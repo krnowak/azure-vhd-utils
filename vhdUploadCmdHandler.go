@@ -17,6 +17,38 @@ import (
 	"github.com/Microsoft/azure-vhd-utils/op"
 )
 
+func createServiceClient(c *cli.Context, account, key string) (*service.Client, error) {
+	var (
+		client *service.Client
+		err error
+	)
+	accountURL := fmt.Sprintf("https://%s.blob.core.windows.net", url.PathEscape(account))
+
+	if key != "" {
+		skc, err := service.NewSharedKeyCredential(account, key)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to create shared key credential: %w", err)
+		}
+		client, err = service.NewClientWithSharedKeyCredential(accountURL, skc, nil)
+	} else {
+		opts := azidentity.DefaultAzureCredentialOptions{
+			DisableInstanceDiscovery: c.Bool("disableinstancediscovery"),
+			TenantID:                 c.String("tenantid"),
+		}
+		creds, err := azidentity.NewDefaultAzureCredential(&opts)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to create default Azure credential: %w", err)
+		}
+		client, err = service.NewClient(accountURL, creds, nil)
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("Failed to create storage service client: %w", err)
+	}
+
+	return client, nil
+}
+
 func vhdUploadCmdHandler() cli.Command {
 	return cli.Command{
 		Name:  "upload",
@@ -29,6 +61,10 @@ func vhdUploadCmdHandler() cli.Command {
 			cli.StringFlag{
 				Name:  "stgaccountname",
 				Usage: "Azure storage account name.",
+			},
+			cli.StringFlag{
+				Name:  "stgaccountkey",
+				Usage: "Azure storage account key (optional).",
 			},
 			cli.StringFlag{
 				Name:  "tenantid",
@@ -69,6 +105,12 @@ func vhdUploadCmdHandler() cli.Command {
 				return errors.New("Missing required argument --stgaccountname")
 			}
 
+			// account key is optional, if not passed,
+			// then we expect that the required storage
+			// blob roles for storage account are already
+			// assigned to azure account
+			stgAccountKey := c.String("stgaccountkey")
+
 			containerName := c.String("containername")
 			if containerName == "" {
 				containerName = "vhds"
@@ -98,17 +140,9 @@ func vhdUploadCmdHandler() cli.Command {
 
 			overwrite := c.IsSet("overwrite")
 
-			opts := azidentity.DefaultAzureCredentialOptions{
-				DisableInstanceDiscovery: c.Bool("disableinstancediscovery"),
-				TenantID:                 c.String("tenantid"),
-			}
-			creds, err := azidentity.NewDefaultAzureCredential(&opts)
-
-			accountURL := fmt.Sprintf("https://%s.blob.core.windows.net", url.PathEscape(stgAccountName))
-
-			serviceClient, err := service.NewClient(accountURL, creds, nil)
+			serviceClient, err := createServiceClient(c, stgAccountName, stgAccountKey)
 			if err != nil {
-				return fmt.Errorf("Failed to create storage service client: %w", err)
+				return err
 			}
 
 			uopts := op.UploadOptions{
