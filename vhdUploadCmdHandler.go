@@ -20,7 +20,7 @@ import (
 func createServiceClient(c *cli.Context, account, key string) (*service.Client, error) {
 	var (
 		client *service.Client
-		err error
+		err    error
 	)
 	accountURL := fmt.Sprintf("https://%s.blob.core.windows.net", url.PathEscape(account))
 
