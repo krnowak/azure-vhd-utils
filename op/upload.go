@@ -14,11 +14,11 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/service"
 	"github.com/coreos/pkg/multierror"
 
-	"github.com/Microsoft/azure-vhd-utils/upload"
-	"github.com/Microsoft/azure-vhd-utils/upload/metadata"
-	"github.com/Microsoft/azure-vhd-utils/vhdcore/common"
-	"github.com/Microsoft/azure-vhd-utils/vhdcore/diskstream"
-	"github.com/Microsoft/azure-vhd-utils/vhdcore/validator"
+	"github.com/flatcar/azure-vhd-utils/upload"
+	"github.com/flatcar/azure-vhd-utils/upload/metadata"
+	"github.com/flatcar/azure-vhd-utils/vhdcore/common"
+	"github.com/flatcar/azure-vhd-utils/vhdcore/diskstream"
+	"github.com/flatcar/azure-vhd-utils/vhdcore/validator"
 )
 
 type Error int

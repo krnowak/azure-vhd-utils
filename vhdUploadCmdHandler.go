@@ -14,7 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/service"
 	"gopkg.in/urfave/cli.v1"
 
-	"github.com/Microsoft/azure-vhd-utils/op"
+	"github.com/flatcar/azure-vhd-utils/op"
 )
 
 func createServiceClient(c *cli.Context, account, key string) (*service.Client, error) {

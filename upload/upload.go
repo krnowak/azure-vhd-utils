@@ -8,10 +8,10 @@ import (
 	"io"
 	"time"
 
-	"github.com/Microsoft/azure-vhd-utils/upload/concurrent"
-	"github.com/Microsoft/azure-vhd-utils/upload/progress"
-	"github.com/Microsoft/azure-vhd-utils/vhdcore/common"
-	"github.com/Microsoft/azure-vhd-utils/vhdcore/diskstream"
+	"github.com/flatcar/azure-vhd-utils/upload/concurrent"
+	"github.com/flatcar/azure-vhd-utils/upload/progress"
+	"github.com/flatcar/azure-vhd-utils/vhdcore/common"
+	"github.com/flatcar/azure-vhd-utils/vhdcore/diskstream"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/blob"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/pageblob"

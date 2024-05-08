@@ -1,4 +1,4 @@
-module github.com/Microsoft/azure-vhd-utils
+module github.com/flatcar/azure-vhd-utils
 
 go 1.22.2
 
