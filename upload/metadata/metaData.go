@@ -93,7 +93,7 @@ func NewMetaDataFromLocalVHD(vhdPath string) (*MetaData, error) {
 
 // NewMetadataFromBlobMetadata returns MetaData instance associated with a Azure page blob, if there is no MetaData
 // associated with the blob it returns nil value for MetaData
-func NewMetadataFromBlobMetaData(blobmd map[string]*string) (*MetaData, error) {
+func NewMetadataFromBlobMetadata(blobmd map[string]*string) (*MetaData, error) {
 	m, ok := blobmd[metaDataKey]
 	if !ok || m == nil {
 		return nil, nil

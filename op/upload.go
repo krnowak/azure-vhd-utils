@@ -123,7 +123,7 @@ func Upload(ctx context.Context, blobServiceClient *service.Client, container, b
 			if len(blobProperties.ContentMD5) > 0 {
 				return BlobAlreadyExists
 			}
-			blobMetaData, err = metadata.NewMetadataFromBlobMetaData(blobProperties.Metadata)
+			blobMetaData, err = metadata.NewMetadataFromBlobMetadata(blobProperties.Metadata)
 			if err != nil {
 				return err
 			}
