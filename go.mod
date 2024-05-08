@@ -1,6 +1,6 @@
 module github.com/flatcar/azure-vhd-utils
 
-go 1.22.2
+go 1.20
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.5.2
